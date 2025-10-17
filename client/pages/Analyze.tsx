@@ -142,81 +142,42 @@ export default function Analyze() {
 
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
-      let currentY = 20;
+      const leftColX = 15;
+      const rightColX = pageWidth / 2 + 5;
+      const colWidth = (pageWidth - 30) / 2 - 5;
 
-      // Set text color
-      pdf.setTextColor(26, 26, 46);
+      let currentY = 15;
 
-      // Title
-      pdf.setFontSize(24);
+      // Add background color for header
+      pdf.setFillColor(245, 245, 250);
+      pdf.rect(0, 0, pageWidth, 35, "F");
+
+      // Logo/Title
+      pdf.setTextColor(128, 0, 128);
+      pdf.setFontSize(18);
       pdf.setFont(undefined, "bold");
-      pdf.text("DeepDetect Analysis Report", pageWidth / 2, currentY, {
-        align: "center",
-      });
-      currentY += 20;
+      pdf.text("DeepDetect", leftColX, currentY + 8);
 
-      // Divider
-      pdf.setDrawColor(200, 200, 200);
-      pdf.line(20, currentY, pageWidth - 20, currentY);
-      currentY += 10;
-
-      // Result Badge
-      pdf.setFontSize(16);
-      pdf.setFont(undefined, "bold");
-      if (result.isAI) {
-        pdf.setTextColor(220, 38, 38);
-      } else {
-        pdf.setTextColor(22, 163, 74);
-      }
-      const resultText = result.isAI
-        ? "⚠️  AI-Generated Image Detected"
-        : "✅  Real Image Verified";
-      pdf.text(resultText, pageWidth / 2, currentY, { align: "center" });
-      currentY += 12;
-
-      // Confidence
-      pdf.setTextColor(26, 26, 46);
-      pdf.setFontSize(14);
-      pdf.setFont(undefined, "normal");
-      pdf.text(
-        `Confidence Score: ${result.confidence}%`,
-        pageWidth / 2,
-        currentY,
-        { align: "center" }
-      );
-      currentY += 8;
-
-      // Timestamp
-      pdf.setFontSize(12);
       pdf.setTextColor(100, 100, 100);
-      pdf.text(`Analysis Date: ${result.timestamp}`, pageWidth / 2, currentY, {
-        align: "center",
+      pdf.setFontSize(9);
+      pdf.setFont(undefined, "normal");
+      pdf.text("AI-Generated Image Analysis Report", leftColX, currentY + 14);
+
+      // Date on right
+      pdf.setTextColor(150, 150, 150);
+      pdf.setFontSize(8);
+      pdf.text(result.timestamp, pageWidth - leftColX, currentY + 8, {
+        align: "right",
       });
-      currentY += 15;
 
-      // Divider
-      pdf.setDrawColor(200, 200, 200);
-      pdf.line(20, currentY, pageWidth - 20, currentY);
-      currentY += 10;
+      currentY = 40;
 
-      // Image Section
-      pdf.setTextColor(26, 26, 46);
-      pdf.setFontSize(14);
-      pdf.setFont(undefined, "bold");
-      pdf.text("Analyzed Image", 20, currentY);
-      currentY += 8;
-
-      // Add image
+      // LEFT COLUMN - Image and Result
+      // Image (smaller)
       const img = new Image();
       img.onload = () => {
-        const imgWidth = pageWidth - 40;
+        const imgWidth = colWidth - 5;
         const imgHeight = (img.height / img.width) * imgWidth;
-
-        // Check if image fits on current page
-        if (currentY + imgHeight > pageHeight - 20) {
-          pdf.addPage();
-          currentY = 20;
-        }
 
         const canvas = document.createElement("canvas");
         canvas.width = img.width;
@@ -224,86 +185,133 @@ export default function Analyze() {
         const ctx = canvas.getContext("2d");
         if (ctx) {
           ctx.drawImage(img, 0, 0);
-          const imgData = canvas.toDataURL("image/jpeg", 0.8);
-          pdf.addImage(imgData, "JPEG", 20, currentY, imgWidth, imgHeight);
-          currentY += imgHeight + 15;
+          const imgData = canvas.toDataURL("image/jpeg", 0.7);
+          pdf.addImage(imgData, "JPEG", leftColX, currentY, imgWidth, imgHeight);
 
-          // Add page break if needed
-          if (currentY > pageHeight - 100) {
-            pdf.addPage();
-            currentY = 20;
+          // Result badge below image
+          let resultY = currentY + imgHeight + 5;
+
+          // Color box for result
+          if (result.isAI) {
+            pdf.setFillColor(220, 38, 38);
+          } else {
+            pdf.setFillColor(22, 163, 74);
           }
+          pdf.rect(leftColX, resultY, colWidth - 5, 12, "F");
 
-          // Analysis Details Section
-          pdf.setTextColor(26, 26, 46);
-          pdf.setFontSize(14);
+          pdf.setTextColor(255, 255, 255);
+          pdf.setFontSize(10);
           pdf.setFont(undefined, "bold");
-          pdf.text("Detailed Analysis", 20, currentY);
-          currentY += 10;
+          const resultText = result.isAI ? "AI-GENERATED" : "REAL IMAGE";
+          pdf.text(resultText, leftColX + colWidth / 2 - 2.5, resultY + 8, {
+            align: "center",
+          });
+
+          // RIGHT COLUMN - Details
+          let detailY = currentY;
+
+          // Confidence Section
+          pdf.setTextColor(26, 26, 46);
+          pdf.setFontSize(12);
+          pdf.setFont(undefined, "bold");
+          pdf.text("Confidence Score", rightColX, detailY);
+
+          detailY += 8;
+
+          // Confidence value
+          pdf.setFontSize(28);
+          pdf.setFont(undefined, "bold");
+          if (result.isAI) {
+            pdf.setTextColor(220, 38, 38);
+          } else {
+            pdf.setTextColor(22, 163, 74);
+          }
+          pdf.text(`${result.confidence}%`, rightColX, detailY + 6);
+
+          detailY += 20;
+
+          // Analysis Details Header
+          pdf.setTextColor(26, 26, 46);
+          pdf.setFontSize(11);
+          pdf.setFont(undefined, "bold");
+          pdf.text("Analysis Metrics", rightColX, detailY);
+
+          detailY += 8;
 
           // Details table
-          pdf.setFontSize(11);
+          pdf.setFontSize(9);
           pdf.setFont(undefined, "normal");
+          pdf.setTextColor(26, 26, 46);
 
-          const details = [
-            ["Metric", "Result"],
-            [
-              "Pixel Anomalies",
-              result.analysisDetails.pixelAnomalies,
-            ],
-            [
-              "Texture Consistency",
-              result.analysisDetails.textureConsistency,
-            ],
+          const metricsData = [
+            ["Pixel Anomalies", result.analysisDetails.pixelAnomalies],
+            ["Texture Consistency", result.analysisDetails.textureConsistency],
             ["Lighting Realism", result.analysisDetails.lightingRealism],
             ["Edge Quality", result.analysisDetails.edgeQuality],
           ];
 
-          pdf.setTextColor(26, 26, 46);
-          details.forEach((row, index) => {
-            if (index === 0) {
-              pdf.setFont(undefined, "bold");
-              pdf.setFillColor(245, 245, 250);
+          metricsData.forEach((metric, index) => {
+            // Alternate row colors
+            if (index % 2 === 0) {
+              pdf.setFillColor(250, 250, 255);
             } else {
-              pdf.setFont(undefined, "normal");
-              const fillColor = index % 2 === 0 ? 255 : 250;
-              pdf.setFillColor(fillColor, fillColor, 255);
+              pdf.setFillColor(245, 245, 250);
             }
+            pdf.rect(rightColX, detailY - 3, colWidth - 5, 7, "F");
 
-            pdf.rect(20, currentY - 5, pageWidth - 40, 8, "F");
-            pdf.text(row[0], 25, currentY);
-            pdf.text(row[1], pageWidth - 40, currentY, { align: "right" });
-            currentY += 10;
+            pdf.setTextColor(26, 26, 46);
+            pdf.setFont(undefined, "normal");
+            pdf.setFontSize(8.5);
+            pdf.text(metric[0], rightColX + 1, detailY + 1);
+
+            pdf.setFont(undefined, "bold");
+            pdf.setTextColor(128, 0, 128);
+            pdf.text(metric[1], rightColX + colWidth - 6, detailY + 1, {
+              align: "right",
+            });
+
+            detailY += 7;
           });
 
-          currentY += 10;
+          // BOTTOM SECTION - Info
+          let bottomY = currentY + imgHeight + 30;
 
-          // Info Section
-          pdf.setTextColor(100, 100, 100);
+          // Full width info box
+          pdf.setFillColor(245, 245, 250);
+          pdf.rect(leftColX, bottomY, pageWidth - 30, 25, "F");
+
+          pdf.setTextColor(26, 26, 46);
           pdf.setFontSize(10);
+          pdf.setFont(undefined, "bold");
+          pdf.text("Report Summary", leftColX + 2, bottomY + 5);
+
+          pdf.setTextColor(80, 80, 80);
+          pdf.setFontSize(8);
           pdf.setFont(undefined, "normal");
-          const infoText =
-            "This report was generated by DeepDetect AI Detection System. The confidence score represents the likelihood of the image being AI-generated based on advanced machine learning algorithms. For critical decisions, human verification is recommended.";
 
-          const splitText = pdf.splitTextToSize(
-            infoText,
-            pageWidth - 40
-          );
-          pdf.text(splitText, 20, currentY);
+          const infoLines = [
+            `Classification: ${result.isAI ? "AI-Generated Image" : "Real Image"}`,
+            `Confidence: ${result.confidence}%`,
+            `Analysis Method: Advanced AI Detection Algorithms`,
+            `Generated: ${new Date().toLocaleString()}`,
+          ];
 
-          currentY += splitText.length * 5 + 10;
+          infoLines.forEach((line, index) => {
+            pdf.text(line, leftColX + 2, bottomY + 10 + index * 4);
+          });
 
           // Footer
-          pdf.setTextColor(150, 150, 150);
-          pdf.setFontSize(9);
-          pdf.text(
-            `Generated on ${new Date().toLocaleString()} | deepdetect.ai`,
-            pageWidth / 2,
-            pageHeight - 10,
-            { align: "center" }
-          );
+          pdf.setDrawColor(200, 200, 200);
+          pdf.line(leftColX, pageHeight - 8, pageWidth - leftColX, pageHeight - 8);
 
-          // Download PDF
+          pdf.setTextColor(150, 150, 150);
+          pdf.setFontSize(7);
+          pdf.setFont(undefined, "normal");
+          pdf.text("DeepDetect AI Detection System", pageWidth / 2, pageHeight - 3, {
+            align: "center",
+          });
+
+          // Save PDF
           pdf.save(`DeepDetect-Report-${Date.now()}.pdf`);
           toast.success("PDF report downloaded successfully!");
         }

@@ -14,6 +14,8 @@ import {
 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { toast } from "sonner";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 
 type Step = "upload" | "review" | "results";
 

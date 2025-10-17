@@ -774,7 +774,7 @@ export default function Analyze() {
                 className="w-full bg-primary hover:bg-primary/90 text-white h-12 flex items-center justify-center gap-2 text-lg"
               >
                 <Download className="w-6 h-6" />
-                Download Report as Image
+                Download Report as PDF
               </Button>
 
               <div className="flex gap-3">

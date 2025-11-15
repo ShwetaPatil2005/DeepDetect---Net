@@ -16,6 +16,7 @@ import Navbar from "@/components/Navbar";
 import { toast } from "sonner";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
+import axios from "axios";
 
 type Step = "upload" | "review" | "results";
 
@@ -42,93 +43,166 @@ export default function Analyze() {
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [uploadMethod, setUploadMethod] = useState<"file" | "url" | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
 
   if (!isAuthenticated) {
     navigate("/login");
     return null;
   }
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (!file.type.startsWith("image/")) {
-        toast.error("Please upload an image file");
+const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+
+  if (!file.type.startsWith("image/")) {
+    toast.error("Please upload a valid image file");
+    return;
+  }
+
+  setSelectedFile(file); // NEW: store selected file
+  const reader = new FileReader();
+  reader.onload = (event) => {
+    const image = event.target?.result as string;
+    setImageUrl(image);
+    setUploadMethod("file");
+    setCurrentStep("review");
+  };
+  reader.readAsDataURL(file);
+};
+
+
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+
+const handleUrlAnalysis = () => {
+  if (!urlInput) {
+    toast.error("Please enter an image URL");
+    return;
+  }
+  setImageUrl(urlInput);
+  setUploadMethod("url");
+  setCurrentStep("review");
+};
+
+
+const BACKEND_URL = "http://127.0.0.1:5001"; // Your Flask backend
+
+const handleStartAnalysis = async () => {
+  if (!imageUrl) {
+    toast.error("No image selected");
+    return;
+  }
+
+  setIsLoading(true);
+
+  try {
+    let response;
+
+    if (uploadMethod === "file") {
+      if (!selectedFile) {
+        toast.error("No file selected");
+        setIsLoading(false);
         return;
       }
 
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const image = event.target?.result as string;
-        setImageUrl(image);
-        setUploadMethod("file");
-        setCurrentStep("review");
-      };
-      reader.readAsDataURL(file);
-    }
-  };
+      const formData = new FormData();
+      formData.append("file", selectedFile);
 
-  const handleUrlAnalysis = () => {
-    if (!urlInput) {
-      toast.error("Please enter an image URL");
-      return;
-    }
-
-    setImageUrl(urlInput);
-    setUploadMethod("url");
-    setCurrentStep("review");
-  };
-
-  const handleStartAnalysis = async () => {
-    if (!imageUrl) {
-      toast.error("No image selected");
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 3000));
-
-      const isAI = Math.random() > 0.5;
-      const confidence = Math.floor(Math.random() * 30 + 70);
-
-      const analysisResult: AnalysisResult = {
-        isAI,
-        confidence,
-        timestamp: new Date().toLocaleString(),
-        analysisDetails: {
-          pixelAnomalies: isAI ? "High" : "Low",
-          textureConsistency: isAI ? "Inconsistent" : "Consistent",
-          lightingRealism: isAI ? "Unnatural" : "Natural",
-          edgeQuality: isAI ? "Blurred" : "Sharp",
-        },
-      };
-
-      setResult(analysisResult);
-
-      // Save to history
-      const history = JSON.parse(localStorage.getItem("analysisHistory") || "[]");
-      history.unshift({
-        id: Date.now(),
-        imageUrl: uploadMethod === "url" ? urlInput : "uploaded-image",
-        isAI,
-        confidence,
-        timestamp: new Date().toISOString(),
+      response = await axios.post(`${BACKEND_URL}/analyze`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
       });
-      localStorage.setItem(
-        "analysisHistory",
-        JSON.stringify(history.slice(0, 50))
-      );
-
-      toast.success("Analysis complete!");
-      setCurrentStep("results");
-    } catch (error) {
-      toast.error("Analysis failed. Please try again.");
-    } finally {
+    } else if (uploadMethod === "url") {
+      response = await axios.post(`${BACKEND_URL}/analyze`, { url: urlInput });
+    } else {
+      toast.error("No upload method selected");
       setIsLoading(false);
+      return;
     }
-  };
 
-  const downloadPDF = async () => {
+    const data = response.data;
+
+    if (
+      !data ||
+      typeof data.confidence !== "number" ||
+      typeof data.isAI !== "boolean" ||
+      !data.timestamp ||
+      !data.analysisDetails
+    ) {
+      console.error("Unexpected backend response:", data);
+      toast.error("Invalid response from server");
+      setIsLoading(false);
+      return;
+    }
+
+    setResult({
+      confidence: data.confidence,
+      isAI: data.isAI,
+      timestamp: data.timestamp,
+      analysisDetails: {
+        pixelAnomalies: data.analysisDetails.pixelAnomalies || "N/A",
+        textureConsistency: data.analysisDetails.textureConsistency || "N/A",
+        lightingRealism: data.analysisDetails.lightingRealism || "N/A",
+        edgeQuality: data.analysisDetails.edgeQuality || "N/A",
+      },
+    });
+
+    // ✅ Save to local history (frontend)
+    const history = JSON.parse(localStorage.getItem("analysisHistory") || "[]");
+    history.unshift({
+      id: Date.now(),
+      imageUrl: uploadMethod === "url" ? urlInput : imageUrl,
+      isAI: data.isAI,
+      confidence: data.confidence,
+      timestamp: new Date().toISOString(),
+    });
+    localStorage.setItem("analysisHistory", JSON.stringify(history.slice(0, 50)));
+
+    // ✅ Save to backend (database)
+    // ✅ Save to backend (database) with actual image URL
+// inside handleStartAnalysis after you setResult(...)
+try {
+  const token = localStorage.getItem("authToken");
+  if (token) {
+    await fetch("http://localhost:8080/api/history", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        imageName: uploadMethod === "url" ? urlInput : "Uploaded Image",
+        result: data.isAI ? "AI-Generated" : "Real",
+        imageUrl: uploadMethod === "url" ? urlInput : imageUrl,
+        // NEW structured fields:
+        isAI: data.isAI,
+        confidence: data.confidence,
+        timestamp: data.timestamp || new Date().toISOString(),
+        analysisDetails: data.analysisDetails || {
+          pixelAnomalies: "N/A",
+          textureConsistency: "N/A",
+          lightingRealism: "N/A",
+          edgeQuality: "N/A",
+        },
+      }),
+    });
+  }
+} catch (err) {
+  console.error("Failed to save history to backend:", err);
+}
+
+
+    toast.success("Analysis complete!");
+    setCurrentStep("results");
+  } catch (err: any) {
+    console.error("Frontend analysis error:", err);
+    toast.error("Analysis failed. Check console for details.");
+  } finally {
+    setIsLoading(false);
+  }
+};
+
+const downloadPDF = async () => {
     if (!result || !imageUrl) return;
 
     try {
@@ -313,6 +387,7 @@ export default function Analyze() {
 
           // Save PDF
           pdf.save(`DeepDetect-Report-${Date.now()}.pdf`);
+          toast.dismiss(); // dismiss the loading toast
           toast.success("PDF report downloaded successfully!");
         }
       };
@@ -372,9 +447,9 @@ export default function Analyze() {
                   className={`w-10 h-10 rounded-full flex items-center justify-center mx-auto mb-2 transition-all ${
                     currentStep === "review"
                       ? "bg-primary text-white"
-                      : currentStep === "results"
-                        ? "bg-secondary text-foreground"
-                        : "bg-border text-muted-foreground"
+                      : currentStep === "upload"
+                        ? "bg-border text-muted-foreground"
+                        : "bg-secondary text-foreground"
                   }`}
                 >
                   2
@@ -397,7 +472,9 @@ export default function Analyze() {
                   className={`w-10 h-10 rounded-full flex items-center justify-center mx-auto mb-2 transition-all ${
                     currentStep === "results"
                       ? "bg-primary text-white"
-                      : "bg-border text-muted-foreground"
+                      : currentStep === "upload" || currentStep === "review"
+                        ? "bg-border text-muted-foreground"
+                        : "bg-border text-muted-foreground"
                   }`}
                 >
                   3
@@ -432,8 +509,8 @@ export default function Analyze() {
               {/* File Upload */}
               <div className="bg-white rounded-2xl p-8 border border-border shadow-lg hover:shadow-xl transition-shadow">
                 <div className="text-center space-y-6">
-                  <div className="w-16 h-16 bg-secondary rounded-full flex items-center justify-center mx-auto">
-                    <Upload className="w-8 h-8 text-primary" />
+                  <div className="w-20 h-20 bg-gradient-to-br from-secondary to-accent rounded-full flex items-center justify-center mx-auto shadow-md">
+                    <Upload className="w-10 h-10 text-primary" />
                   </div>
 
                   <div>
@@ -451,8 +528,10 @@ export default function Analyze() {
                       accept="image/*"
                       onChange={handleFileUpload}
                       className="hidden"
+                      ref={fileInputRef} // <-- add this
                       id="file-input"
                     />
+
                     <label htmlFor="file-input" className="cursor-pointer">
                       <Upload className="w-12 h-12 text-primary mx-auto mb-3" />
                       <p className="font-semibold text-foreground mb-1">
@@ -470,9 +549,9 @@ export default function Analyze() {
               <div className="bg-white rounded-2xl p-8 border border-border shadow-lg hover:shadow-xl transition-shadow">
                 <div className="space-y-6">
                   <div className="text-center space-y-2">
-                    <div className="w-16 h-16 bg-secondary rounded-full flex items-center justify-center mx-auto">
-                      <LinkIcon className="w-8 h-8 text-primary" />
-                    </div>
+                    <div className="w-20 h-20 bg-gradient-to-br from-secondary to-accent rounded-full flex items-center justify-center mx-auto shadow-md">
+                    <LinkIcon className="w-10 h-10 text-primary" />
+                  </div>
                     <h2 className="text-2xl font-bold text-foreground">
                       Paste Image URL
                     </h2>

@@ -12,25 +12,40 @@ export default function ForgotPassword() {
   const [isLoading, setIsLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
 
-    if (!email) {
-      toast.error("Please enter your email");
-      return;
+  if (!email) {
+    toast.error("Please enter your email");
+    return;
+  }
+
+  setIsLoading(true);
+  try {
+    const res = await fetch("http://localhost:8080/api/auth/forgot-password", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email }),
+    });
+
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data.message || "Failed to send reset link");
     }
 
-    setIsLoading(true);
-    try {
-      // Mock password reset - in production, this would call a real API
-      toast.success("Password reset link sent to your email!");
-      setSubmitted(true);
-    } catch (error) {
-      toast.error("Failed to send reset link. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    const data = await res.json();
+    toast.success(data.message || "Password reset link sent to your email!");
+    setSubmitted(true);
+  } catch (error: any) {
+    console.error(error);
+    toast.error(error.message || "Failed to send reset link. Please try again.");
+  } finally {
+    setIsLoading(false);
+  }
+};
+
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-white to-background">

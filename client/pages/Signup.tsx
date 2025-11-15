@@ -15,38 +15,51 @@ export default function Signup() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault();
+const handleSignup = async (e: React.FormEvent) => {
+  e.preventDefault();
 
-    if (!name || !email || !password || !confirmPassword) {
-      toast.error("Please fill in all fields");
-      return;
-    }
+  if (!name || !email || !password || !confirmPassword) {
+    toast.error("Please fill in all fields");
+    return;
+  }
 
-    if (password !== confirmPassword) {
-      toast.error("Passwords do not match");
-      return;
-    }
+  if (password !== confirmPassword) {
+    toast.error("Passwords do not match");
+    return;
+  }
 
-    if (password.length < 8) {
-      toast.error("Password must be at least 8 characters");
-      return;
-    }
+  if (password.length < 8) {
+    toast.error("Password must be at least 8 characters");
+    return;
+  }
 
-    setIsLoading(true);
-    try {
-      // Mock authentication - in production, this would call a real API
-      localStorage.setItem("authToken", "mock-token-" + Date.now());
-      localStorage.setItem("user", JSON.stringify({ name, email }));
+  setIsLoading(true);
+  try {
+    const response = await fetch("http://localhost:8080/api/auth/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        username: name, // ✅ backend expects 'username'
+        email,
+        password,
+      }),
+    });
 
+    const data = await response.json();
+
+    if (response.ok) {
       toast.success("Account created successfully!");
-      navigate("/analyze");
-    } catch (error) {
-      toast.error("Sign up failed. Please try again.");
-    } finally {
-      setIsLoading(false);
+      navigate("/login");
+    } else {
+      toast.error(data.message || "Sign up failed. Please try again.");
     }
-  };
+  } catch (error) {
+    console.error("Signup error:", error);
+    toast.error("Sign up failed. Please try again.");
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-white to-background">
@@ -55,16 +68,12 @@ export default function Signup() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-20">
         <div className="grid md:grid-cols-2 gap-12 items-center">
           <div className="hidden md:block animate-fade-in">
-            <div className="w-full aspect-square bg-gradient-to-br from-accent to-primary/30 rounded-2xl shadow-xl flex items-center justify-center">
-              <div className="text-center">
-                <div className="text-6xl mb-4">✨</div>
-                <p className="text-xl font-semibold text-foreground">
-                  Join the Community
-                </p>
-                <p className="text-muted-foreground mt-2">
-                  Get started with image detection
-                </p>
-              </div>
+            <div className="w-full rounded-2xl shadow-xl overflow-hidden">
+              <img
+                src="https://www.entrust.com/sites/default/files/2025-03/what-are-deepfakes-blog-header-1502x800.png"
+                alt="AI facial recognition technology"
+                className="w-full h-full object-cover"
+              />
             </div>
           </div>
 

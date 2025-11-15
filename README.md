@@ -1,10 +1,33 @@
-# DeepDetect - AI-Generated Image Detection
+## 🧠 DeepDetect-Net
+AI-Generated Image Detection System (Deepfake & Synthetic Image Classifier)
 
-A modern, responsive, and user-friendly frontend for AI-generated image detection. Identify synthetic faces, manipulated photos, and deepfakes with advanced AI analysis.
+DeepDetect-Net is a full-stack AI system designed to detect whether an image is real or AI-generated using a deep learning model based on ResNet-50.
+
+## The system includes:
+
+🌐 Frontend: React + Vite
+🔐 Backend: Node.js + Express.js (User Authentication & API Gateway)
+🤖 Model Server: Flask + TensorFlow/PyTorch
+
+## 🗂️ Datasets:
+
+1. 140K Real and Fake Face Dataset
+   - Used to train initial classifier for deepfake vs real faces
+2.  Hard Fake vs Real Face Dataset
+   - Used to improve model robustness and real-world generalization.
+
+## 🏗️ System Architecture
+React + Vite (Frontend)
+        ↓
+Node.js + Express.js (Backend API + Auth)
+        ↓
+Flask Model Server (ResNet-50 Inference)
+        ↓
+AI Generated? YES/NO.
 
 ## 🎯 Features
 
-- **AI-Generated Image Detection**: Accurate detection with 98%+ confidence
+- **AI-Generated Image Detection**: Accurate detection with 85% confidence
 - **Easy Image Upload**: Upload from device or paste image URL
 - **Step-by-Step Analysis**: Intuitive 3-step workflow (Upload → Review → Results)
 - **Professional PDF Reports**: Download detailed analysis reports as single-page PDFs
@@ -236,21 +259,21 @@ The app uses **mock authentication** for demo purposes. All data is stored in **
 **For Production:** Replace mock auth with a real backend service (Firebase, Auth0, Supabase, etc.)
 
 ## 🛠️ Technology Stack
-
-| Category | Technology |
-|----------|------------|
-| **Frontend Framework** | React 18 |
-| **Routing** | React Router 6 |
-| **Styling** | TailwindCSS 3 + Radix UI |
-| **Build Tool** | Vite 7 |
-| **Backend Server** | Express 5 |
-| **Language** | TypeScript |
-| **PDF Generation** | jsPDF + html2canvas |
-| **Icons** | Lucide React |
-| **Notifications** | Sonner |
-| **Testing** | Vitest |
-| **Package Manager** | pnpm |
-
+----------------------------------------------------
+| Category               | Technology              |
+|------------------------|-------------------------|
+| **Frontend Framework** | React 18                |
+| **Routing**            | React Router 6          |
+| **Styling**            | TailwindCSS 3 + Radix UI|
+| **Build Tool**         | Vite 7                  |
+| **Backend Server**     | Express 5               |
+| **Language**           | TypeScript              |
+| **PDF Generation**     | jsPDF + html2canvas     |
+| **Icons**              | Lucide React            |
+| **Notifications**      | Sonner                  |
+| **Testing**            | Vitest                  |
+| **Package Manager**    | pnpm                    |
+----------------------------------------------------
 ## 🐛 Troubleshooting
 
 ### Issue: Command not found: pnpm
@@ -335,26 +358,6 @@ pnpm format.fix
   - Download report button
   - Delete option
 
-## 🚢 Deployment
-
-### Deploy to Netlify
-1. Push code to GitHub
-2. Connect repository to Netlify
-3. Netlify automatically builds and deploys
-
-### Deploy to Vercel
-1. Push code to GitHub
-2. Import project in Vercel dashboard
-3. Automatic deployments on push
-
-### Manual Deployment
-```bash
-# Build for production
-pnpm build
-
-# Files ready in:
-# - dist/spa/          (frontend)
-# - dist/server/       (backend)
 ```
 
 ## 📝 Environment Variables (Optional)

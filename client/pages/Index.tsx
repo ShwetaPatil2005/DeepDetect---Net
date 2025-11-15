@@ -47,7 +47,7 @@ export default function Index() {
                   </Button>
                 </Link>
               ) : (
-                <Link to="/signup">
+                <Link to="/signup"> 
                   <Button
                     size="lg"
                     className="bg-primary hover:bg-primary/90 text-white flex items-center gap-2"
@@ -70,8 +70,12 @@ export default function Index() {
           </div>
 
           <div className="hidden md:flex animate-fade-in">
-            <div className="w-full aspect-square bg-gradient-to-br from-secondary to-accent rounded-2xl shadow-xl flex items-center justify-center">
-              <Eye className="w-32 h-32 text-foreground/20" />
+            <div className="w-full rounded-2xl shadow-xl overflow-hidden">
+              <img
+                src="https://deepfakedetector.ai/img/deepfake%20detector.png"
+                alt="Facial recognition technology"
+                className="w-full h-full object-cover"
+              />
             </div>
           </div>
         </div>
@@ -130,8 +134,12 @@ export default function Index() {
       <section id="why" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-32">
         <div className="grid md:grid-cols-2 gap-12 items-center">
           <div className="hidden md:flex">
-            <div className="w-full aspect-square bg-gradient-to-br from-accent to-secondary rounded-2xl shadow-xl flex items-center justify-center">
-              <AlertTriangle className="w-32 h-32 text-foreground/20" />
+            <div className="w-full rounded-2xl shadow-xl overflow-hidden">
+              <img
+                src="https://media.istockphoto.com/id/2231278604/photo/digital-security-alert-displayed-on-smartphone-amidst-cybersecurity-symbols-and-icons-in-a.jpg?s=2048x2048&w=is&k=20&c=KMR19iy_A5dM6G1xrnABBV9NUbLHQ2oFPDhPfQpP-dI="
+                alt="AI neural network eye technology"
+                className="w-full h-full object-cover"
+              />
             </div>
           </div>
 
@@ -264,8 +272,12 @@ export default function Index() {
             </div>
 
             <div className="hidden md:flex">
-              <div className="w-full aspect-square bg-gradient-to-br from-secondary to-primary/20 rounded-2xl shadow-xl flex items-center justify-center">
-                <Shield className="w-32 h-32 text-foreground/20" />
+              <div className="w-full rounded-2xl shadow-xl overflow-hidden">
+                <img
+                  src="https://screenapp.io/blog/best-free-deepfake-detection-tools.webp"
+                  alt="Secure biometric authentication"
+                  className="w-full h-full object-cover"
+                />
               </div>
             </div>
           </div>

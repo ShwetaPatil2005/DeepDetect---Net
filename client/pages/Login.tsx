@@ -13,28 +13,41 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!email || !password) {
-      toast.error("Please fill in all fields");
-      return;
-    }
+ const handleLogin = async (e: React.FormEvent) => {
+  e.preventDefault();
 
-    setIsLoading(true);
-    try {
-      // Mock authentication - in production, this would call a real API
-      localStorage.setItem("authToken", "mock-token-" + Date.now());
-      localStorage.setItem("user", JSON.stringify({ email }));
-      
-      toast.success("Logged in successfully!");
+  if (!email || !password) {
+    toast.error("Please fill in both fields");
+    return;
+  }
+
+  setIsLoading(true);
+  try {
+    const response = await fetch("http://localhost:8080/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      // ✅ Store token using the same key as rest of app
+      localStorage.setItem("authToken", data.token);
+
+      toast.success("Login successful!");
+      // ✅ React Router navigation (no reload)
       navigate("/analyze");
-    } catch (error) {
-      toast.error("Login failed. Please try again.");
-    } finally {
-      setIsLoading(false);
+    } else {
+      toast.error(data.message || "Login failed!");
     }
-  };
+  } catch (error) {
+    console.error("Error:", error);
+    toast.error("Something went wrong. Try again!");
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-white to-background">
@@ -43,16 +56,12 @@ export default function Login() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-20">
         <div className="grid md:grid-cols-2 gap-12 items-center">
           <div className="hidden md:block animate-fade-in">
-            <div className="w-full aspect-square bg-gradient-to-br from-secondary to-accent rounded-2xl shadow-xl flex items-center justify-center">
-              <div className="text-center">
-                <div className="text-6xl mb-4">🔐</div>
-                <p className="text-xl font-semibold text-foreground">
-                  Secure Access
-                </p>
-                <p className="text-muted-foreground mt-2">
-                  Analyze images privately
-                </p>
-              </div>
+            <div className="w-full rounded-2xl shadow-xl overflow-hidden">
+              <img
+                src="https://cdni.iconscout.com/illustration/premium/thumb/login-security-illustration-svg-download-png-6956673.png"
+                alt="Secure authentication"
+                className="w-full h-full object-cover"
+              />
             </div>
           </div>
 
@@ -95,7 +104,7 @@ export default function Login() {
                   <Input
                     id="password"
                     type="password"
-                    placeholder="••••••••"
+                    placeholder="���•••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="border-border focus:ring-primary"
